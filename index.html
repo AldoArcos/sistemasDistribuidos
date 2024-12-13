@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alta Artículo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+            color: #333;
+        }
+
+        input, textarea {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #resultado {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Alta de Artículo</h1>
+        <form id="altaArticuloForm">
+            <label for="nombre">Nombre del Artículo:</label>
+            <input type="text" id="nombre" name="nombre" required>
+
+            <label for="descripcion">Descripción:</label>
+            <textarea id="descripcion" name="descripcion" required></textarea>
+
+            <label for="precio">Precio:</label>
+            <input type="number" id="precio" name="precio" step="0.01" required>
+
+            <label for="cantidad">Cantidad:</label>
+            <input type="number" id="cantidad" name="cantidad" required>
+
+            <label for="foto">Foto (en Base64):</label>
+            <input type="file" id="foto" name="foto" accept="image/*" required>
+
+            <button type="submit">Registrar Artículo</button>
+        </form>
+
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        document.getElementById('altaArticuloForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Obtener los valores del formulario
+            const nombre = document.getElementById('nombre').value;
+            const descripcion = document.getElementById('descripcion').value;
+            const precio = parseFloat(document.getElementById('precio').value);
+            const cantidad = parseInt(document.getElementById('cantidad').value);
+            const fotoInput = document.getElementById('foto').files[0];
+
+            // Convertir la imagen a base64
+            const fotoBase64 = await convertirImagenABase64(fotoInput);
+
+            // Crear el objeto del artículo
+            const articulo = {
+                articulo: {
+                    nombre: nombre,
+                    descripcion: descripcion,
+                    precio: precio,
+                    cantidad: cantidad,
+                    foto: fotoBase64
+                }
+            };
+
+            // Enviar la solicitud POST a la Azure Function
+            try {
+                const response = await fetch('https://<tu_funcion_url>/api/AltaArticulo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(articulo)
+                });
+
+                const data = await response.json();
+                
+                // Mostrar el resultado en el frontend
+                if (response.ok) {
+                    document.getElementById('resultado').textContent = 'Artículo dado de alta correctamente!';
+                    document.getElementById('altaArticuloForm').reset(); // Resetear formulario
+                } else {
+                    document.getElementById('resultado').textContent = 'Error: ' + data.mensaje;
+                }
+            } catch (error) {
+                document.getElementById('resultado').textContent = 'Error al conectar con el servidor.';
+                console.error(error);
+            }
+        });
+
+        // Función para convertir la imagen a base64
+        function convertirImagenABase64(fotoInput) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(fotoInput);
+            });
+        }
+    </script>
+</body>
+</html>
